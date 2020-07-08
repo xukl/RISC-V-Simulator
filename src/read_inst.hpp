@@ -1,14 +1,13 @@
+#ifndef READ_INST_HPP
+#define READ_INST_HPP
 #include <istream>
 #include <cstdint>
-#include <cstddef>
-template <size_t capacity>
-using inst_pool = uint8_t[capacity];
+#include "state.hpp"
 
-template <size_t capacity>
-void read_inst(std::istream &is, inst_pool<capacity> &inst)
+void read_inst(std::istream &is)
 {
 	auto saved_flags = is.flags(std::ios_base::hex);
-	uint8_t *ptr = inst;
+	uint8_t *ptr = memory;
 	while ((is >> std::ws).good())
 	{
 		if (is.peek() == '@')
@@ -16,7 +15,7 @@ void read_inst(std::istream &is, inst_pool<capacity> &inst)
 			is.get();
 			size_t pos;
 			is >> pos;
-			ptr = inst + pos;
+			ptr = memory + pos;
 		}
 		else
 		{
@@ -27,3 +26,4 @@ void read_inst(std::istream &is, inst_pool<capacity> &inst)
 	}
 	is.flags(saved_flags);
 }
+#endif
