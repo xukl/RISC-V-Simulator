@@ -222,7 +222,7 @@ void ID()
 	}
 	else
 	{
-		ID_result = NOP;
+		ID_result = ID_NOP;
 		ID_result.pc = pc - 4;
 	}
 }

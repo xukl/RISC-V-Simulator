@@ -18,8 +18,8 @@ struct ID_inst
 	inst_op exact_op;
 	uint32_t pc;
 };
-const uint32_t NOP_orig = 0x00000013;
-const ID_inst NOP {NOP_orig, inst_format::I, 0, 0, 0, 0, 0, 0, opcode::OP_IMM, 0, 0, inst_op::ADDI, 0};
+const uint32_t IF_NOP = 0x00000013;
+const ID_inst ID_NOP {IF_NOP, inst_format::I, 0, 0, 0, 0, 0, 0, opcode::OP_IMM, 0, 0, inst_op::ADDI, uint32_t(-4)};
 struct EX_inst
 {
 	bool finish_flag;
@@ -30,6 +30,7 @@ struct EX_inst
 	bool branch_flag;
 	int s_l_info;
 };
+EX_inst EX_NOP {false, opcode::OP_IMM, 0, 0, uint32_t(-4), false, 0};
 struct MEM_inst
 {
 	bool finish_flag;
@@ -39,4 +40,5 @@ struct MEM_inst
 	uint32_t pc;
 	bool branch_flag;
 };
+MEM_inst MEM_NOP {false, opcode::OP_IMM, 0, 0, uint32_t(-4), false};
 #endif
