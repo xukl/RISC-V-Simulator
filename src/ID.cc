@@ -9,11 +9,11 @@ static ID_inst ID_pending_result;
 
 #define funct3_case(funct3_val, op)\
 				case funct3_val:\
-					ID_pending_result.exact_op = ID_inst::op;\
+					ID_pending_result.exact_op = inst_op::op;\
 					break;
 void instruction_R()
 {
-	ID_pending_result.type = ID_inst::R;
+	ID_pending_result.format = inst_format::R;
 	ID_pending_result.rd = ID_bitmask(7, 5);
 	ID_pending_result.funct3 = ID_bitmask(12, 3);
 	ID_pending_result.rs1 = ID_bitmask(15, 5);
@@ -49,7 +49,7 @@ void instruction_R()
 }
 void instruction_I()
 {
-	ID_pending_result.type = ID_inst::I;
+	ID_pending_result.format = inst_format::I;
 	ID_pending_result.rd = ID_bitmask(7, 5);
 	ID_pending_result.funct3 = ID_bitmask(12, 3);
 	ID_pending_result.rs1 = ID_bitmask(15, 5);
@@ -57,13 +57,13 @@ void instruction_I()
 	ID_pending_result.imm = sign_ext(11, ID_bitmask(20, 12));
 	switch (ID_pending_result.opcode)
 	{
-		case JALR:
+		case opcode::JALR:
 			if (ID_pending_result.funct3 == 0)
-				ID_pending_result.exact_op = ID_inst::JALR;
+				ID_pending_result.exact_op = inst_op::JALR;
 			else
 				abort();
 			break;
-		case LOAD:
+		case opcode::LOAD:
 			switch (ID_pending_result.funct3)
 			{
 				funct3_case(0, LB)
@@ -75,7 +75,7 @@ void instruction_I()
 					abort();
 			}
 			break;
-		default: // case OP_IMM:
+		default: // case opcode::OP_IMM:
 			switch (ID_pending_result.funct3)
 			{
 				funct3_case(0, ADDI)
@@ -87,13 +87,13 @@ void instruction_I()
 				case 1:
 					if (ID_pending_result.imm >> 5 != 0)
 						abort();
-					ID_pending_result.exact_op = ID_inst::SLLI;
+					ID_pending_result.exact_op = inst_op::SLLI;
 					break;
 				case 5:
 					if (ID_pending_result.imm >> 5 == 0)
-						ID_pending_result.exact_op = ID_inst::SRLI;
+						ID_pending_result.exact_op = inst_op::SRLI;
 					else if (ID_pending_result.imm >> 5 == 0x20)
-						ID_pending_result.exact_op = ID_inst::SRAI;
+						ID_pending_result.exact_op = inst_op::SRAI;
 					else
 						abort();
 			}
@@ -101,7 +101,7 @@ void instruction_I()
 }
 void instruction_S()
 {
-	ID_pending_result.type = ID_inst::S;
+	ID_pending_result.format = inst_format::S;
 	ID_pending_result.rd = 0;
 	ID_pending_result.funct3 = ID_bitmask(12, 3);
 	ID_pending_result.rs1 = ID_bitmask(15, 5);
@@ -118,7 +118,7 @@ void instruction_S()
 }
 void instruction_B()
 {
-	ID_pending_result.type = ID_inst::B;
+	ID_pending_result.format = inst_format::B;
 	ID_pending_result.rd = 0;
 	ID_pending_result.funct3 = ID_bitmask(12, 3);
 	ID_pending_result.rs1 = ID_bitmask(15, 5);
@@ -142,23 +142,23 @@ void instruction_B()
 }
 void instruction_U()
 {
-	ID_pending_result.type = ID_inst::U;
+	ID_pending_result.format = inst_format::U;
 	ID_pending_result.rd = ID_bitmask(7, 5);
 	ID_pending_result.rs1 = 0;
 	ID_pending_result.rs2 = 0;
 	ID_pending_result.imm = ID_bitmask(12, 20) << 12;
 	switch (ID_pending_result.opcode)
 	{
-		case LUI:
-			ID_pending_result.exact_op = ID_inst::LUI;
+		case opcode::LUI:
+			ID_pending_result.exact_op = inst_op::LUI;
 			break;
-		default: // case AUIPC:
-			ID_pending_result.exact_op = ID_inst::AUIPC;
+		default: // case opcode::AUIPC:
+			ID_pending_result.exact_op = inst_op::AUIPC;
 	}
 }
 void instruction_J()
 {
-	ID_pending_result.type = ID_inst::J;
+	ID_pending_result.format = inst_format::J;
 	ID_pending_result.rd = ID_bitmask(7, 5);
 	ID_pending_result.rs1 = 0;
 	ID_pending_result.rs2 = 0;
@@ -167,36 +167,41 @@ void instruction_J()
 		(ID_bitmask(20, 1) << 11) |
 		(ID_bitmask(21, 10) << 1) |
 		sign_ext_bit(20, ID_pending_result.orig);
-	ID_pending_result.exact_op = ID_inst::JAL;
+	ID_pending_result.exact_op = inst_op::JAL;
 }
 #undef funct3_case
 void ID()
 {
+	if (EX_stall)
+	{
+		ID_stall = true;
+		return;
+	}
 	if (!ID_stall)
 	{
 		ID_pending_result.orig = IF_result;
 		ID_pending_result.opcode = ID_bitmask(0, 7);
 		switch (ID_pending_result.opcode)
 		{
-			case OP:
+			case opcode::OP:
 				instruction_R();
 				break;
-			case OP_IMM:
-			case LOAD:
-			case JALR:
+			case opcode::OP_IMM:
+			case opcode::LOAD:
+			case opcode::JALR:
 				instruction_I();
 				break;
-			case STORE:
+			case opcode::STORE:
 				instruction_S();
 				break;
-			case BRANCH:
+			case opcode::BRANCH:
 				instruction_B();
 				break;
-			case LUI:
-			case AUIPC:
+			case opcode::LUI:
+			case opcode::AUIPC:
 				instruction_U();
 				break;
-			case JAL:
+			case opcode::JAL:
 				instruction_J();
 				break;
 			default:

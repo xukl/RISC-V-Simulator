@@ -12,5 +12,5 @@ uint32_t IF_result;
 ID_inst ID_result;
 EX_inst EX_result;
 MEM_inst MEM_result;
-bool ID_stall;
+bool ID_stall, EX_stall, MEM_stall;
 #endif

@@ -3,20 +3,25 @@
 
 void EX()
 {
+	if (MEM_stall)
+	{
+		EX_stall = true;
+		return;
+	}
 	EX_result.opcode = ID_result.opcode;
 	EX_result.pc = ID_result.pc;
-	switch (ID_result.type)
+	switch (ID_result.format)
 	{
-		case ID_inst::R:
-		case ID_inst::I:
-		case ID_inst::U:
-		case ID_inst::J:
+		case inst_format::R:
+		case inst_format::I:
+		case inst_format::U:
+		case inst_format::J:
 			EX_result.reg = ID_result.rd;
 			break;
-		case ID_inst::S:
+		case inst_format::S:
 			EX_result.reg = ID_result.rs1;
 			break;
-		case ID_inst::B:
+		case inst_format::B:
 			;
 	}
 	uint32_t rs1 = ID_result.rs1_val;
@@ -25,7 +30,7 @@ void EX()
 	switch (ID_result.exact_op)
 	{
 #define val_case(op_type, expr)\
-		case ID_inst::op_type:\
+		case inst_op::op_type:\
 			EX_result.val = (expr);\
 		break;
 		val_case(ADD, rs1 + rs2)
@@ -70,7 +75,7 @@ void EX()
 	switch (ID_result.exact_op)
 	{
 #define flag_case(op_type, expr)\
-		case ID_inst::op_type:\
+		case inst_op::op_type:\
 			EX_result.branch_flag = (expr);\
 			break;
 		flag_case(BEQ, rs1 == rs2)
@@ -80,6 +85,24 @@ void EX()
 		flag_case(BLTU, uint32_t(rs1) < uint32_t(rs2))
 		flag_case(BGEU, uint32_t(rs1) >= uint32_t(rs2))
 #undef flag_case
+		case inst_op::SB:
+		case inst_op::LB:
+			EX_result.s_l_info = -1;
+			break;
+		case inst_op::LBU:
+			EX_result.s_l_info = 1;
+			break;
+		case inst_op::SH:
+		case inst_op::LH:
+			EX_result.s_l_info = -2;
+			break;
+		case inst_op::LHU:
+			EX_result.s_l_info = 2;
+			break;
+		case inst_op::SW:
+		case inst_op::LW:
+			EX_result.s_l_info = -4;
+			break;
 		default:
 			;
 	}
