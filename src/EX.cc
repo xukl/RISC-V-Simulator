@@ -19,14 +19,16 @@ void EX()
 			EX_result.reg = ID_result.rd;
 			break;
 		case inst_format::S:
-			EX_result.reg = ID_result.rs1;
+			EX_result.reg = ID_result.rs2;
 			break;
 		case inst_format::B:
 			;
 	}
+	EX_result.finish_flag = (ID_result.orig == 0x0ff00513);
 	uint32_t rs1 = ID_result.rs1_val;
 	uint32_t rs2 = ID_result.rs2_val;
 	uint32_t imm = ID_result.imm;
+	uint32_t pc = ID_result.pc;
 	switch (ID_result.exact_op)
 	{
 #define val_case(op_type, expr)\

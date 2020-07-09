@@ -22,15 +22,17 @@ const uint32_t NOP_orig = 0x00000013;
 const ID_inst NOP {NOP_orig, inst_format::I, 0, 0, 0, 0, 0, 0, opcode::OP_IMM, 0, 0, inst_op::ADDI, 0};
 struct EX_inst
 {
+	bool finish_flag;
 	uint_fast8_t opcode;
 	uint32_t val;
 	uint_fast8_t reg;
 	uint32_t pc;
 	bool branch_flag;
-	uint_fast8_t s_l_info;
+	int s_l_info;
 };
 struct MEM_inst
 {
+	bool finish_flag;
 	uint_fast8_t opcode;
 	uint32_t val;
 	uint_fast8_t reg;
