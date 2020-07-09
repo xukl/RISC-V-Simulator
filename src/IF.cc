@@ -3,6 +3,5 @@
 
 void IF()
 {
-	IF_result = *reinterpret_cast<uint32_t*>(pc);
-	pc += 4;
+	IF_result = *reinterpret_cast<uint32_t*>(memory + pc);
 }

@@ -11,16 +11,16 @@ struct ID_inst
 	uint_fast8_t opcode;
 	uint32_t rs1_val, rs2_val;
 	enum {ADD, SLT, SLTU, AND, OR, XOR, SLL, SRL, SUB, SRA, ADDI, SLTI, SLTIU, ANDI, ORI, XORI, SLLI, SRLI, SRAI, LB, LH, LW, LBU, LHU, SB, SH, SW, BEQ, BNE, BLT, BLTU, BGE, BGEU, LUI, AUIPC, JAL, JALR} exact_op;
-	uint8_t *pc;
+	uint32_t pc;
 };
 const uint32_t NOP_orig = 0x00000013;
-const ID_inst NOP {NOP_orig, ID_inst::I, 0, 0, 0, 0, 0, 0, OP_IMM, 0, 0, ID_inst::ADDI, nullptr};
+const ID_inst NOP {NOP_orig, ID_inst::I, 0, 0, 0, 0, 0, 0, OP_IMM, 0, 0, ID_inst::ADDI, 0};
 struct EX_inst
 {
 	uint_fast8_t opcode;
 	uint32_t val;
 	uint_fast8_t reg;
-	uint32_t *pc;
+	uint32_t pc;
 	bool branch_flag;
 };
 struct MEM_inst {};

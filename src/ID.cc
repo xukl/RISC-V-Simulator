@@ -6,6 +6,11 @@
 static ID_inst ID_pending_result;
 #define ID_bitmask(start_pos, len)\
 	((ID_pending_result.orig >> (start_pos)) & ((1 << (len)) - 1))
+
+#define funct3_case(funct3_val, op)\
+				case funct3_val:\
+					ID_pending_result.exact_op = ID_inst::op;\
+					break;
 void instruction_R()
 {
 	ID_pending_result.type = ID_inst::R;
@@ -19,10 +24,6 @@ void instruction_R()
 		case 0:
 			switch (ID_pending_result.funct3)
 			{
-#define funct3_case(funct3_val, op)\
-				case funct3_val:\
-					ID_pending_result.exact_op = ID_inst::op;\
-					break;
 				funct3_case(0, ADD)
 				funct3_case(1, SLL)
 				funct3_case(2, SLT)
@@ -168,6 +169,7 @@ void instruction_J()
 		sign_ext_bit(20, ID_pending_result.orig);
 	ID_pending_result.exact_op = ID_inst::JAL;
 }
+#undef funct3_case
 void ID()
 {
 	if (!ID_stall)
@@ -211,8 +213,12 @@ void ID()
 		ID_result = ID_pending_result;
 		ID_result.rs1_val = reg[ID_result.rs1];
 		ID_result.rs2_val = reg[ID_result.rs2];
+		ID_result.pc = pc;
 	}
 	else
+	{
 		ID_result = NOP;
+		ID_result.pc = pc - 4;
+	}
 }
 #undef ID_bitmask

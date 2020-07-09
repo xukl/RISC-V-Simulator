@@ -2,7 +2,7 @@
 #define STATE_HPP
 #include <cstdint>
 #include "inst.hpp"
-uint8_t *pc = nullptr;
+uint32_t pc = 0;
 uint32_t reg[32];
 bool reg_has_pending_write[32];
 const int MAX_MEMORY = 0x20 << 12;
