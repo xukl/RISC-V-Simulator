@@ -3,6 +3,6 @@
 
 void IF()
 {
-	IF_result.orig = *reinterpret_cast<uint32_t*>(pc);
+	IF_result = *reinterpret_cast<uint32_t*>(pc);
 	pc += 4;
 }
