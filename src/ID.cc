@@ -1,7 +1,24 @@
 #include <cstdint>
 #include <cstdlib>
-#include "common.hpp"
-#include "state.hpp"
+#include "inst.hpp"
+extern uint32_t pc;
+extern uint32_t reg[32];
+extern bool reg_has_pending_write[32];
+
+extern uint32_t IF_result;
+extern ID_inst ID_result;
+extern bool ID_stall, EX_stall;
+constexpr inline uint32_t sign_ext(int sign_bit_pos, uint32_t orig)
+{
+	return static_cast<uint32_t>(
+			(static_cast<int32_t>(orig) << (31 - sign_bit_pos))
+			>> (31 - sign_bit_pos));
+}
+constexpr inline uint32_t sign_ext_bit(int pos, uint32_t orig)
+{
+	return static_cast<uint32_t>(
+			static_cast<int32_t>(orig & 0x80000000) >> (31 - pos));
+}
 
 static ID_inst ID_pending_result;
 #define ID_bitmask(start_pos, len)\

@@ -1,7 +1,13 @@
 #include <cstdint>
-#include "state.hpp"
+#include "inst.hpp"
 #include "ending.hpp"
 
+extern uint32_t pc;
+extern uint32_t reg[32];
+extern bool reg_has_pending_write[32];
+
+extern MEM_inst MEM_result;
+extern bool MEM_stall;
 void WB()
 {
 	if (MEM_stall)
@@ -16,13 +22,16 @@ void WB()
 		case opcode::JALR:
 		case opcode::JAL:
 			reg[rd] = prev_pc + 4;
+			reg_has_pending_write[rd] = false;
 			pc = val;
 			break;
 		case opcode::OP_IMM:
 		case opcode::OP:
 		case opcode::LUI:
 		case opcode::LOAD:
+		case opcode::AUIPC:
 			reg[rd] = val;
+			reg_has_pending_write[rd] = false;
 			pc = prev_pc + 4;
 			break;
 		case opcode::BRANCH:
@@ -30,6 +39,9 @@ void WB()
 				pc = val;
 			else
 				pc = prev_pc + 4;
+			break;
+		case opcode::STORE:
+			pc = prev_pc + 4;
 	}
 	reg[0] = 0;
 }

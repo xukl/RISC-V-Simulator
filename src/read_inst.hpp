@@ -2,8 +2,8 @@
 #define READ_INST_HPP
 #include <istream>
 #include <cstdint>
-#include "state.hpp"
 
+extern uint8_t memory[];
 void read_inst(std::istream &is)
 {
 	auto saved_flags = is.flags(std::ios_base::hex);

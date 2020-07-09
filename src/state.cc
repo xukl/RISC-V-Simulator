@@ -1,5 +1,3 @@
-#ifndef STATE_HPP
-#define STATE_HPP
 #include <cstdint>
 #include "inst.hpp"
 uint32_t pc = 0;
@@ -13,4 +11,3 @@ ID_inst ID_result = ID_NOP;
 EX_inst EX_result = EX_NOP;
 MEM_inst MEM_result = MEM_NOP;
 bool ID_stall, EX_stall, MEM_stall;
-#endif
