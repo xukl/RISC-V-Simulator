@@ -28,7 +28,7 @@ std::ostream &operator<< (std::ostream &os, const print_hex32bit &p)
 }
 void print_ID_result()
 {
-	std::cout << "orig: " << print_hex32bit(ID_result.orig) << std::endl;
+	std::cout << "pc: " << print_hex32bit(ID_result.pc) << "   orig: " << print_hex32bit(ID_result.orig) << std::endl;
 	std::cout << "operation: ";
 	switch (ID_result.exact_op)
 	{
@@ -102,7 +102,7 @@ void print_reg()
 	std::cout << "pc : " << print_hex32bit(pc) << std::endl;
 	for (int i = 0; i < 32; ++i)
 	{
-		std::cout << 'x' << std::setw(2) << std::dec << i << ": " << print_hex32bit(reg[i]) << "  ";
+		std::cout << 'x' << std::setw(2) << i << ": " << print_hex32bit(reg[i]) << "  ";
 		if ((i + 1) % 4 == 0)
 			std::cout << std::endl;
 	}

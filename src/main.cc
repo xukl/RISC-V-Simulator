@@ -1,12 +1,13 @@
 #include <iostream>
-#include "read_inst.hpp"
+#ifdef DEBUG
 #include "debug.hpp"
-#include <unistd.h>
+#endif
 extern void IF();
 extern void ID();
 extern void EX();
 extern void MEM();
 extern void WB();
+extern void read_inst(std::istream &);
 int main()
 {
 	std::ios::sync_with_stdio(false);
@@ -18,9 +19,10 @@ int main()
 		EX();
 		MEM();
 		WB();
+#ifdef DEBUG
 		print_ID_result();
 		print_reg();
 		print_stall();
-		sleep(1);
+#endif
 	}
 }

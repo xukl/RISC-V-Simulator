@@ -1,5 +1,3 @@
-#ifndef READ_INST_HPP
-#define READ_INST_HPP
 #include <istream>
 #include <cstdint>
 
@@ -26,4 +24,3 @@ void read_inst(std::istream &is)
 	}
 	is.flags(saved_flags);
 }
-#endif

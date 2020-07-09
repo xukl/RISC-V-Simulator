@@ -1,13 +1,14 @@
 #include <cstdint>
 #include <cstdlib>
 #include "inst.hpp"
-extern uint32_t pc;
-extern uint32_t reg[32];
+extern const volatile uint32_t pc;
+extern const volatile uint32_t reg[32];
 extern bool reg_has_pending_write[32];
 
-extern uint32_t IF_result;
+extern const volatile uint32_t IF_result;
 extern ID_inst ID_result;
-extern bool ID_stall, EX_stall;
+extern bool ID_stall;
+extern const volatile bool EX_stall;
 constexpr inline uint32_t sign_ext(int sign_bit_pos, uint32_t orig)
 {
 	return static_cast<uint32_t>(

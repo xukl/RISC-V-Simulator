@@ -1,13 +1,15 @@
 #include <cstdint>
 #include "inst.hpp"
-#include "ending.hpp"
 
 extern uint32_t pc;
 extern uint32_t reg[32];
 extern bool reg_has_pending_write[32];
 
-extern MEM_inst MEM_result;
-extern bool MEM_stall;
+extern const volatile MEM_inst MEM_result;
+extern const volatile bool MEM_stall;
+
+extern void end_of_simulation();
+
 void WB()
 {
 	if (MEM_stall)

@@ -1,9 +1,10 @@
 #include <cstdint>
 #include "inst.hpp"
 
-extern ID_inst ID_result;
+extern const volatile ID_inst ID_result;
 extern EX_inst EX_result;
-extern bool EX_stall, MEM_stall;
+extern bool EX_stall;
+extern const volatile bool MEM_stall;
 void EX()
 {
 	if (MEM_stall)

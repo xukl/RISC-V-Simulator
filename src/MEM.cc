@@ -1,10 +1,10 @@
 #include <cstdint>
 #include "inst.hpp"
 
-extern uint32_t reg[32];
+extern const volatile uint32_t reg[32];
 extern uint8_t memory[];
 
-extern EX_inst EX_result;
+extern const volatile EX_inst EX_result;
 extern MEM_inst MEM_result;
 extern bool MEM_stall;
 
@@ -12,6 +12,7 @@ static int MEM_cycle = 0;
 void MEM()
 {
 	auto &val = MEM_result.val;
+	MEM_result.finish_flag = EX_result.finish_flag;
 	switch (EX_result.opcode)
 	{
 		case opcode::LOAD:
