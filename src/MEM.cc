@@ -60,7 +60,6 @@ void MEM()
 	{
 		++MEM_cycle;
 		MEM_result = MEM_NOP;
-		MEM_result.pc = EX_result.pc;
 	}
 	else
 		val = EX_result.val;
@@ -69,8 +68,6 @@ void MEM()
 		MEM_result.opcode = EX_result.opcode;
 		MEM_result.reg = EX_result.reg;
 		// MEM_result.val may have been written by LOAD. Do not overwrite it.
-		MEM_result.pc = EX_result.pc;
-		MEM_result.branch_flag = EX_result.branch_flag;
 	}
 	MEM_stall = (MEM_cycle != 0);
 }

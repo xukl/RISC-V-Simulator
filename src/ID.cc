@@ -4,8 +4,9 @@
 extern const volatile uint32_t pc;
 extern const volatile uint32_t reg[32];
 extern const volatile bool reg_has_pending_write[32];
+extern const volatile jump_info jump_info_bus;
 
-extern const volatile uint32_t IF_result;
+extern const volatile IF_inst IF_result;
 extern const volatile bool EX_stall;
 extern ID_inst ID_result;
 extern bool ID_stall;
@@ -190,13 +191,23 @@ void instruction_J()
 #undef funct3_case
 void ID()
 {
-	if (EX_stall)
+	if ((jump_info_bus & jump_info::has_info) &&
+			((jump_info_bus & jump_info::mispredict) ||
+			 (jump_info_bus & jump_info::is_jump)))
+	{
+		ID_stall = true;
+		ID_pending_result = ID_NOP;
+		ID_pending_result.pc = pc - 4;
+		ID_result = ID_pending_result;
+		return;
+	}
+	else if (EX_stall)
 		ID_stall = true;
 	else
 	{
 		if (!ID_stall)
 		{
-			ID_pending_result.orig = IF_result;
+			ID_pending_result.orig = IF_result.orig;
 			ID_pending_result.opcode = inst_opcode(ID_bitmask(0, 7));
 			switch (ID_pending_result.opcode)
 			{
@@ -234,12 +245,12 @@ void ID()
 		ID_result = ID_pending_result;
 		ID_result.rs1_val = reg[ID_result.rs1];
 		ID_result.rs2_val = reg[ID_result.rs2];
-		ID_result.pc = pc;
+		ID_result.pc = IF_result.pc;
 	}
 	else
 	{
 		ID_result = ID_NOP;
-		ID_result.pc = pc - 4;
+		ID_result.pc = IF_result.pc - 4;
 	}
 }
 #undef ID_bitmask

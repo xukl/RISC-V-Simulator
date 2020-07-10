@@ -1,5 +1,5 @@
 #include <iostream>
-//#define DEBUG
+#define DEBUG
 #ifdef DEBUG
 #include "debug.hpp"
 #include <fstream>
@@ -23,11 +23,11 @@ int main(int argc, char **argv)
 #endif
 	while (true)
 	{
-		IF();
-		ID();
-		EX();
-		MEM();
 		WB();
+		MEM();
+		EX();
+		ID();
+		IF();
 #ifdef DEBUG
 		print_ID_result();
 		print_reg();
