@@ -3,12 +3,12 @@
 #include "inst.hpp"
 extern const volatile uint32_t pc;
 extern const volatile uint32_t reg[32];
-extern bool reg_has_pending_write[32];
+extern const volatile bool reg_has_pending_write[32];
 
 extern const volatile uint32_t IF_result;
+extern const volatile bool EX_stall;
 extern ID_inst ID_result;
 extern bool ID_stall;
-extern const volatile bool EX_stall;
 constexpr inline uint32_t sign_ext(int sign_bit_pos, uint32_t orig)
 {
 	return static_cast<uint32_t>(
@@ -75,13 +75,13 @@ void instruction_I()
 	ID_pending_result.imm = sign_ext(11, ID_bitmask(20, 12));
 	switch (ID_pending_result.opcode)
 	{
-		case opcode::JALR:
+		case inst_opcode::JALR:
 			if (ID_pending_result.funct3 == 0)
 				ID_pending_result.exact_op = inst_op::JALR;
 			else
 				abort();
 			break;
-		case opcode::LOAD:
+		case inst_opcode::LOAD:
 			switch (ID_pending_result.funct3)
 			{
 				funct3_case(0, LB)
@@ -93,7 +93,7 @@ void instruction_I()
 					abort();
 			}
 			break;
-		default: // case opcode::OP_IMM:
+		default: // case inst_opcode::OP_IMM:
 			switch (ID_pending_result.funct3)
 			{
 				funct3_case(0, ADDI)
@@ -167,10 +167,10 @@ void instruction_U()
 	ID_pending_result.imm = ID_bitmask(12, 20) << 12;
 	switch (ID_pending_result.opcode)
 	{
-		case opcode::LUI:
+		case inst_opcode::LUI:
 			ID_pending_result.exact_op = inst_op::LUI;
 			break;
-		default: // case opcode::AUIPC:
+		default: // case inst_opcode::AUIPC:
 			ID_pending_result.exact_op = inst_op::AUIPC;
 	}
 }
@@ -191,48 +191,46 @@ void instruction_J()
 void ID()
 {
 	if (EX_stall)
-	{
 		ID_stall = true;
-		return;
-	}
-	if (!ID_stall)
+	else
 	{
-		ID_pending_result.orig = IF_result;
-		ID_pending_result.opcode = ID_bitmask(0, 7);
-		switch (ID_pending_result.opcode)
+		if (!ID_stall)
 		{
-			case opcode::OP:
-				instruction_R();
-				break;
-			case opcode::OP_IMM:
-			case opcode::LOAD:
-			case opcode::JALR:
-				instruction_I();
-				break;
-			case opcode::STORE:
-				instruction_S();
-				break;
-			case opcode::BRANCH:
-				instruction_B();
-				break;
-			case opcode::LUI:
-			case opcode::AUIPC:
-				instruction_U();
-				break;
-			case opcode::JAL:
-				instruction_J();
-				break;
-			default:
-				abort();
+			ID_pending_result.orig = IF_result;
+			ID_pending_result.opcode = inst_opcode(ID_bitmask(0, 7));
+			switch (ID_pending_result.opcode)
+			{
+				case inst_opcode::OP:
+					instruction_R();
+					break;
+				case inst_opcode::OP_IMM:
+				case inst_opcode::LOAD:
+				case inst_opcode::JALR:
+					instruction_I();
+					break;
+				case inst_opcode::STORE:
+					instruction_S();
+					break;
+				case inst_opcode::BRANCH:
+					instruction_B();
+					break;
+				case inst_opcode::LUI:
+				case inst_opcode::AUIPC:
+					instruction_U();
+					break;
+				case inst_opcode::JAL:
+					instruction_J();
+					break;
+				default:
+					abort();
+			}
 		}
+		ID_stall =
+			reg_has_pending_write[ID_pending_result.rs1] ||
+			reg_has_pending_write[ID_pending_result.rs2];
 	}
-	ID_stall =
-		reg_has_pending_write[ID_pending_result.rs1] ||
-		reg_has_pending_write[ID_pending_result.rs2];
 	if (!ID_stall)
 	{
-		reg_has_pending_write[ID_pending_result.rd] = true;
-		reg_has_pending_write[0] = false;
 		ID_result = ID_pending_result;
 		ID_result.rs1_val = reg[ID_result.rs1];
 		ID_result.rs2_val = reg[ID_result.rs2];

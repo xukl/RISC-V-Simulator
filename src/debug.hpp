@@ -28,13 +28,13 @@ std::ostream &operator<< (std::ostream &os, const print_hex32bit &p)
 }
 void print_ID_result()
 {
-	std::cout << "pc: " << print_hex32bit(ID_result.pc) << "   orig: " << print_hex32bit(ID_result.orig) << std::endl;
-	std::cout << "operation: ";
+	std::clog << "pc: " << print_hex32bit(ID_result.pc) << "   orig: " << print_hex32bit(ID_result.orig) << std::endl;
+	std::clog << "operation: ";
 	switch (ID_result.exact_op)
 	{
 #define op_case(op)\
 		case inst_op::op:\
-			std::cout << #op;\
+			std::clog << #op;\
 			break;
 op_case(ADD)op_case(SLT)op_case(SLTU)op_case(AND)op_case(OR)op_case(XOR)op_case(SLL)op_case(SRL)op_case(SUB)op_case(SRA)op_case(ADDI)op_case(SLTI)op_case(SLTIU)op_case(ANDI)op_case(ORI)op_case(XORI)op_case(SLLI)op_case(SRLI)op_case(SRAI)op_case(LB)op_case(LH)op_case(LW)op_case(LBU)op_case(LHU)op_case(SB)op_case(SH)op_case(SW)op_case(BEQ)op_case(BNE)op_case(BLT)op_case(BLTU)op_case(BGE)op_case(BGEU)op_case(LUI)op_case(AUIPC)op_case(JAL)op_case(JALR)
 	}
@@ -42,19 +42,19 @@ op_case(ADD)op_case(SLT)op_case(SLTU)op_case(AND)op_case(OR)op_case(XOR)op_case(
 	{
 #define print_rs1()\
 		{\
-			std::cout << ", rs1=" << std::setfill('0') << std::setw(2) << int(ID_result.rs1);\
+			std::clog << ", rs1=" << std::setfill('0') << std::setw(2) << int(ID_result.rs1);\
 		}
 #define print_rs2()\
 		{\
-			std::cout << ", rs2=" << std::setfill('0') << std::setw(2) << int(ID_result.rs2);\
+			std::clog << ", rs2=" << std::setfill('0') << std::setw(2) << int(ID_result.rs2);\
 		}
 #define print_rd()\
 		{\
-			std::cout << ", rd=" << std::setfill('0') << std::setw(2) << int(ID_result.rd);\
+			std::clog << ", rd=" << std::setfill('0') << std::setw(2) << int(ID_result.rd);\
 		}
 #define print_imm()\
 		{\
-			std::cout << ", imm=" << print_hex32bit(ID_result.imm);\
+			std::clog << ", imm=" << print_hex32bit(ID_result.imm);\
 		}
 		case inst_format::R:
 			print_rs1();
@@ -89,23 +89,23 @@ op_case(ADD)op_case(SLT)op_case(SLTU)op_case(AND)op_case(OR)op_case(XOR)op_case(
 #undef print_rd
 #undef print_imm
 	}
-	std::cout << std::endl;
+	std::clog << std::endl;
 }
 void print_stall()
 {
-	std::cout << "ID (" << (ID_stall ? 'x' : 'o') << ")  ";
-	std::cout << "EX (" << (EX_stall ? 'x' : 'o') << ")  ";
-	std::cout << "MEM (" << (MEM_stall ? 'x' : 'o') << ")\n" << std::endl;
+	std::clog << "ID (" << (ID_stall ? 'x' : 'o') << ")  ";
+	std::clog << "EX (" << (EX_stall ? 'x' : 'o') << ")  ";
+	std::clog << "MEM (" << (MEM_stall ? 'x' : 'o') << ")\n" << std::endl;
 }
 void print_reg()
 {
-	std::cout << "pc : " << print_hex32bit(pc) << std::endl;
+	std::clog << "pc : " << print_hex32bit(pc) << std::endl;
 	for (int i = 0; i < 32; ++i)
 	{
-		std::cout << 'x' << std::setw(2) << i << ": " << print_hex32bit(reg[i]) << "  ";
+		std::clog << 'x' << std::setw(2) << i << ": " << print_hex32bit(reg[i]) << "  ";
 		if ((i + 1) % 4 == 0)
-			std::cout << std::endl;
+			std::clog << std::endl;
 	}
-	std::cout << std::endl;
+	std::clog << std::endl;
 }
 #endif

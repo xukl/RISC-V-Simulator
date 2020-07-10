@@ -2,9 +2,10 @@
 #include "inst.hpp"
 
 extern const volatile ID_inst ID_result;
+extern const volatile bool MEM_stall;
 extern EX_inst EX_result;
 extern bool EX_stall;
-extern const volatile bool MEM_stall;
+extern bool reg_has_pending_write[32];
 void EX()
 {
 	if (MEM_stall)
@@ -12,6 +13,8 @@ void EX()
 		EX_stall = true;
 		return;
 	}
+	else
+		EX_stall = false;
 	EX_result.opcode = ID_result.opcode;
 	EX_result.pc = ID_result.pc;
 	switch (ID_result.format)
@@ -21,6 +24,8 @@ void EX()
 		case inst_format::U:
 		case inst_format::J:
 			EX_result.reg = ID_result.rd;
+			reg_has_pending_write[ID_result.rd] = true;
+			reg_has_pending_write[0] = false;
 			break;
 		case inst_format::S:
 			EX_result.reg = ID_result.rs2;
