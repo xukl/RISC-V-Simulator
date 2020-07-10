@@ -6,7 +6,7 @@ extern uint8_t memory[];
 
 extern const volatile EX_inst EX_result;
 extern MEM_inst MEM_result;
-extern bool MEM_stall;
+extern bool MEM_stall, MEM_pause;
 
 static int MEM_cycle = 0;
 void MEM()
@@ -70,4 +70,5 @@ void MEM()
 		// MEM_result.val may have been written by LOAD. Do not overwrite it.
 	}
 	MEM_stall = (MEM_cycle != 0);
+	MEM_pause = (MEM_cycle != 0);
 }

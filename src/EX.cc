@@ -1,16 +1,17 @@
 #include <cstdint>
 #include "inst.hpp"
 extern const volatile ID_inst ID_result;
-extern const volatile bool MEM_stall;
+extern const volatile bool MEM_pause;
+
 extern volatile uint32_t pc;
 extern jump_info jump_info_bus;
-
 extern EX_inst EX_result;
 extern bool EX_stall;
+extern bool EX_pause;
 extern bool reg_has_pending_write[32];
 void EX()
 {
-	if (MEM_stall)
+	if (MEM_pause)
 	{
 		EX_stall = true;
 		return;
@@ -90,6 +91,7 @@ void EX()
 		case inst_op::op_type:\
 			pc = (expr);\
 			EX_result.val = ID_pc + 4;\
+			EX_pause = true;\
 			jump_info_bus = jump_info(jump_info::has_info | jump_info::is_jump);\
 			break;
 		jump_case(JAL, ID_pc + imm)
@@ -100,22 +102,20 @@ void EX()
 			if (expr)\
 			{\
 				if (!(ID_result.j_info & jump_info::take_branch))\
-					jump_info_bus = jump_info(jump_info::has_info | \
-						jump_info::take_branch | jump_info::mispredict);\
+					EX_pause = true;\
 				else\
-					jump_info_bus = jump_info(jump_info::has_info | \
-						jump_info::take_branch);\
+					EX_pause = false;\
 				pc = ID_pc + imm;\
 			}\
 			else\
 			{\
 				if (ID_result.j_info & jump_info::take_branch)\
-					jump_info_bus = jump_info(jump_info::has_info | \
-						jump_info::mispredict);\
+					EX_pause = true;\
 				else\
-					jump_info_bus = jump_info(jump_info::has_info);\
+					EX_pause = false;\
 				pc = ID_pc + 4;\
 			}\
+			jump_info_bus = jump_info(jump_info::has_info | ID_result.j_info | (EX_pause ? jump_info::mispredict : 0));\
 			break;
 		branch_case(BEQ, ID_pc + imm)
 		branch_case(BNE, ID_pc + imm)
@@ -126,6 +126,7 @@ void EX()
 #undef branch_case
 		default:
 			pc = ID_pc + 4;
+			EX_pause = false;
 			jump_info_bus = jump_info(0);
 	}
 }

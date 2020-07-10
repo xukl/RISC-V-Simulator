@@ -3,9 +3,10 @@
 extern const volatile uint8_t memory[];
 extern const volatile uint32_t pc;
 extern const volatile jump_info jump_info_bus;
-extern const volatile bool ID_stall;
+extern const volatile bool ID_pause, MEM_pause;
 
 extern IF_inst IF_result;
+extern bool IF_stall;
 
 static bool end_reached = false;
 static uint32_t IF_pc = 0;
@@ -22,8 +23,11 @@ constexpr inline uint32_t sign_ext_bit(int pos, uint32_t orig)
 	return static_cast<uint32_t>(
 			static_cast<int32_t>(orig & 0x80000000) >> (31 - pos));
 }
+
 void IF()
 {
+	if (MEM_pause || ID_pause)
+		return;
 	if (jump_info_bus & jump_info::has_info)
 	{
 		if (!(jump_info_bus & jump_info::is_jump))
@@ -37,13 +41,9 @@ void IF()
 	}
 	if (end_reached)
 		IF_result = IF_NOP;
-	else if (ID_stall)
-	{
-		IF_result = IF_NOP;
-		IF_result.pc = IF_pc - 4;
-	}
 	else
 	{
+		IF_stall = false;
 		uint32_t raw_inst = *reinterpret_cast<const volatile uint32_t*>(memory + IF_pc);
 		IF_result = {raw_inst, IF_pc, jump_info(0)};
 		if (inst_opcode(raw_inst & ((1 << 7) - 1)) == inst_opcode::BRANCH)

@@ -1,5 +1,5 @@
 #include <iostream>
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #include "debug.hpp"
 #include <fstream>
@@ -29,9 +29,8 @@ int main(int argc, char **argv)
 		ID();
 		IF();
 #ifdef DEBUG
-		print_ID_result();
 		print_reg();
-		print_stall();
+		print_pipeline();
 #endif
 	}
 }

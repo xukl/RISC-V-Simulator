@@ -5,11 +5,12 @@ extern const volatile uint32_t pc;
 extern const volatile uint32_t reg[32];
 extern const volatile bool reg_has_pending_write[32];
 extern const volatile jump_info jump_info_bus;
-
 extern const volatile IF_inst IF_result;
-extern const volatile bool EX_stall;
+extern const volatile bool MEM_pause;
+
 extern ID_inst ID_result;
 extern bool ID_stall;
+extern bool ID_pause;
 constexpr inline uint32_t sign_ext(int sign_bit_pos, uint32_t orig)
 {
 	return static_cast<uint32_t>(
@@ -191,21 +192,25 @@ void instruction_J()
 #undef funct3_case
 void ID()
 {
+	if (MEM_pause)
+	{
+		ID_stall = true;
+		return;
+	}
 	if ((jump_info_bus & jump_info::has_info) &&
 			((jump_info_bus & jump_info::mispredict) ||
 			 (jump_info_bus & jump_info::is_jump)))
 	{
 		ID_stall = true;
+		ID_pause = false;
 		ID_pending_result = ID_NOP;
 		ID_pending_result.pc = pc - 4;
 		ID_result = ID_pending_result;
 		return;
 	}
-	else if (EX_stall)
-		ID_stall = true;
 	else
 	{
-		if (!ID_stall)
+		if (!ID_pause)
 		{
 			ID_pending_result.orig = IF_result.orig;
 			ID_pending_result.opcode = inst_opcode(ID_bitmask(0, 7));
@@ -236,12 +241,13 @@ void ID()
 					abort();
 			}
 		}
-		ID_stall =
+		ID_pause =
 			reg_has_pending_write[ID_pending_result.rs1] ||
 			reg_has_pending_write[ID_pending_result.rs2];
 	}
-	if (!ID_stall)
+	if (!ID_pause)
 	{
+		ID_stall = false;
 		ID_result = ID_pending_result;
 		ID_result.rs1_val = reg[ID_result.rs1];
 		ID_result.rs2_val = reg[ID_result.rs2];
@@ -249,6 +255,7 @@ void ID()
 	}
 	else
 	{
+		ID_stall = true;
 		ID_result = ID_NOP;
 		ID_result.pc = IF_result.pc - 4;
 	}

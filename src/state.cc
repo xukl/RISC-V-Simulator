@@ -10,5 +10,6 @@ IF_inst IF_result = IF_NOP;
 ID_inst ID_result = ID_NOP;
 EX_inst EX_result = EX_NOP;
 MEM_inst MEM_result = MEM_NOP;
-bool ID_stall, EX_stall, MEM_stall;
+bool IF_stall, ID_stall, EX_stall, MEM_stall;
+bool ID_pause, EX_pause, MEM_pause;
 jump_info jump_info_bus;
