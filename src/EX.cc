@@ -117,12 +117,12 @@ void EX()
 			}\
 			jump_info_bus = jump_info(jump_info::has_info | ID_result.j_info | (EX_pause ? jump_info::mispredict : 0));\
 			break;
-		branch_case(BEQ, ID_pc + imm)
-		branch_case(BNE, ID_pc + imm)
-		branch_case(BLT, ID_pc + imm)
-		branch_case(BGE, ID_pc + imm)
-		branch_case(BLTU, ID_pc + imm)
-		branch_case(BGEU, ID_pc + imm)
+		branch_case(BEQ, rs1 == rs2)
+		branch_case(BNE, rs1 != rs2)
+		branch_case(BLT, int32_t(rs1) < int32_t(rs2))
+		branch_case(BGE, int32_t(rs1) >= int32_t(rs2))
+		branch_case(BLTU, uint32_t(rs1) < uint32_t(rs2))
+		branch_case(BGEU, uint32_t(rs1) >= uint32_t(rs2))
 #undef branch_case
 		default:
 			pc = ID_pc + 4;
