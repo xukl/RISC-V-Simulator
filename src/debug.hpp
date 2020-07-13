@@ -126,9 +126,11 @@ void print_reg()
 	std::clog << "pc : " << print_hex32bit(pc) << std::endl;
 	for (int i = 0; i < 32; ++i)
 	{
-		std::clog << 'x' << std::setw(2) << i << ": " << print_hex32bit(reg[i]) << "  ";
+		std::clog << 'x' << std::setw(2) << i << ": " << print_hex32bit(reg[i]);
 		if ((i + 1) % 4 == 0)
 			std::clog << std::endl;
+		else
+			std::clog << "  ";
 	}
 	std::clog << std::endl;
 }
