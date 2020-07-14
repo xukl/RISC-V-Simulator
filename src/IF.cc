@@ -1,12 +1,16 @@
 #include <cstdint>
 #include "inst.hpp"
-extern const volatile uint8_t memory[];
-extern const volatile uint32_t pc;
-extern const volatile jump_info jump_info_bus;
-extern const volatile bool ID_pause, MEM_pause;
+#include "state.hpp"
+extern const uint8_t i_memory[];
+extern const state old_state;
+extern state new_state;
 
-extern IF_inst IF_result;
-extern bool IF_stall;
+static const uint32_t &pc = old_state.pc;
+static const jump_info &jump_info_bus = old_state.jump_info_bus;
+static const bool &ID_pause = old_state.ID_pause, &MEM_pause = old_state.MEM_pause;
+
+static IF_inst &IF_result = new_state.IF_result;
+static bool &IF_stall = new_state.IF_stall;
 
 static bool end_reached = false;
 static uint32_t IF_pc = 0;
@@ -26,8 +30,6 @@ constexpr inline uint32_t sign_ext_bit(int pos, uint32_t orig)
 
 void IF()
 {
-	if (MEM_pause || ID_pause)
-		return;
 	if (jump_info_bus & jump_info::has_info)
 	{
 		if (!(jump_info_bus & jump_info::is_jump))
@@ -37,14 +39,18 @@ void IF()
 		{
 			IF_pc = pc;
 			end_reached = false;
+			goto fetch;
 		}
 	}
+	if (MEM_pause || ID_pause)
+		return;
 	if (end_reached)
 		IF_result = IF_NOP;
 	else
 	{
+fetch:
 		IF_stall = false;
-		uint32_t raw_inst = *reinterpret_cast<const volatile uint32_t*>(memory + IF_pc);
+		uint32_t raw_inst = *reinterpret_cast<const uint32_t*>(i_memory + IF_pc);
 		IF_result = {raw_inst, IF_pc, jump_info(0)};
 		if (inst_opcode(raw_inst & ((1 << 7) - 1)) == inst_opcode::BRANCH)
 		{
@@ -69,6 +75,12 @@ void IF()
 			}
 			IF_result.j_info = jump_info::has_info;
 		}
+/*		else if (inst_opcode(raw_inst & ((1 << 7) - 1)) == inst_opcode::JALR)
+		{
+		}
+		else if (inst_opcode(raw_inst & ((1 << 7) - 1)) == inst_opcode::JAL)
+		{
+		}*/
 		else
 			IF_pc += 4;
 		if (IF_result.orig == END_INST_ORIG)

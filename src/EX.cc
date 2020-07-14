@@ -1,24 +1,39 @@
 #include <cstdint>
+#include <cstdlib>
 #include "inst.hpp"
-extern const volatile ID_inst ID_result;
-extern const volatile bool MEM_pause;
+#include "state.hpp"
+extern const state old_state;
+extern state new_state;
 
-extern volatile uint32_t pc;
-extern jump_info jump_info_bus;
-extern EX_inst EX_result;
-extern bool EX_stall;
-extern bool EX_pause;
-extern bool reg_has_pending_write[32];
+static const ID_inst &ID_result = old_state.ID_result;
+static const bool &MEM_pause = old_state.MEM_pause;
+
+static uint32_t &pc = new_state.pc;
+static jump_info &jump_info_bus = new_state.jump_info_bus;
+static EX_inst &EX_result = new_state.EX_result;
+static bool &EX_stall = new_state.EX_stall;
+static bool &EX_pause = new_state.EX_pause;
+static bool *const reg_has_pending_write = new_state.reg_has_pending_write;
 void EX()
 {
+	if (old_state.EX_pause)
+	{
+		EX_pause = false;
+		EX_stall = false;
+		if (!MEM_pause)
+			EX_result = EX_NOP;
+		jump_info_bus = jump_info(0);
+		return;
+	}
 	if (MEM_pause)
 	{
 		EX_stall = true;
 		return;
 	}
-	else
-		EX_stall = false;
+	EX_stall = false;
 	EX_result.opcode = ID_result.opcode;
+	if (EX_result.opcode == inst_opcode(0)) // wrong_inst_fmt
+		abort();
 	switch (ID_result.format)
 	{
 		case inst_format::R:
@@ -68,28 +83,29 @@ void EX()
 		val_case(LUI, imm)
 		val_case(AUIPC, ID_pc + imm)
 #undef val_case
-#define SL_case(op_type, expr, info)\
+#define SL_case(op_type, info)\
 		case inst_op::op_type:\
-			EX_result.val = (expr);\
+			EX_result.val = rs2;\
+			EX_result.addr = rs1 + imm;\
 			EX_result.s_l_info = info;\
 			break;
-		SL_case(LB, rs1 + imm, -1)
-		SL_case(LH, rs1 + imm, -2)
-		SL_case(LW, rs1 + imm, -4)
-		SL_case(LBU, rs1 + imm, 1)
-		SL_case(LHU, rs1 + imm, 2)
-		SL_case(SB, rs1 + imm, -1)
-		SL_case(SH, rs1 + imm, -2)
-		SL_case(SW, rs1 + imm, -4)
+		SL_case(LB, -1)
+		SL_case(LH, -2)
+		SL_case(LW, -4)
+		SL_case(LBU, 1)
+		SL_case(LHU, 2)
+		SL_case(SB, -1)
+		SL_case(SH, -2)
+		SL_case(SW, -4)
 #undef SL_case
 		default:
 			;
 	}
 	switch (ID_result.exact_op)
 	{
-#define jump_case(op_type, expr)\
+#define jump_case(op_type, new_pc)\
 		case inst_op::op_type:\
-			pc = (expr);\
+			pc = (new_pc);\
 			EX_result.val = ID_pc + 4;\
 			EX_pause = true;\
 			jump_info_bus = jump_info(jump_info::has_info | jump_info::is_jump);\
@@ -129,4 +145,6 @@ void EX()
 			EX_pause = false;
 			jump_info_bus = jump_info(0);
 	}
+	if (EX_pause)
+		EX_stall = true;
 }

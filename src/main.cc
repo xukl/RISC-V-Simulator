@@ -1,4 +1,5 @@
 #include <iostream>
+#include "state.hpp"
 //#define DEBUG
 #ifdef DEBUG
 #include "debug.hpp"
@@ -11,6 +12,7 @@ extern void EX();
 extern void MEM();
 extern void WB();
 extern void read_inst(std::istream &);
+extern state old_state, new_state;
 int main(int argc, char **argv)
 {
 	std::ios::sync_with_stdio(false);
@@ -28,6 +30,7 @@ int main(int argc, char **argv)
 		EX();
 		ID();
 		IF();
+		old_state = new_state;
 #ifdef DEBUG
 		print_reg();
 		print_pipeline();

@@ -1,10 +1,13 @@
 #include <cstdint>
 #include "inst.hpp"
-extern const volatile MEM_inst MEM_result;
-extern void end_of_simulation();
+#include "state.hpp"
+extern const state old_state;
+extern state new_state;
+static const MEM_inst &MEM_result = old_state.MEM_result;
+void end_of_simulation();
 
-extern uint32_t reg[32];
-extern bool reg_has_pending_write[32];
+static uint32_t *const reg = new_state.reg;
+static bool *const reg_has_pending_write = new_state.reg_has_pending_write;
 void WB()
 {
 	if (MEM_result.finish_flag)

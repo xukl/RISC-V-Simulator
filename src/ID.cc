@@ -1,28 +1,83 @@
 #include <cstdint>
-#include <cstdlib>
 #include "inst.hpp"
-extern const volatile uint32_t pc;
-extern const volatile uint32_t reg[32];
-extern const volatile bool reg_has_pending_write[32];
-extern const volatile jump_info jump_info_bus;
-extern const volatile IF_inst IF_result;
-extern const volatile bool MEM_pause;
+#include "state.hpp"
+extern const state old_state;
+extern state new_state;
 
-extern ID_inst ID_result;
-extern bool ID_stall;
-extern bool ID_pause;
+static const uint32_t &pc = old_state.pc;
+static const uint32_t *const reg = old_state.reg;
+static const bool *const reg_has_pending_write = old_state.reg_has_pending_write;
+static const jump_info &jump_info_bus = old_state.jump_info_bus;
+static const IF_inst &IF_result = old_state.IF_result;
+static const bool &MEM_pause = old_state.MEM_pause;
+
+static ID_inst &ID_result = new_state.ID_result;
+static bool &ID_stall = new_state.ID_stall;
+static bool &ID_pause = new_state.ID_pause;
+
+static uint_fast8_t last_rd;
+static IF_inst IF_ID_buff;
+
+/* function: sign_ext
+ * input: sign_bit_pos, orig
+ *	orig (binary):
+ * 	31                                    0
+ * 	v                                     v
+ * 	zzzz zzXy yyyy yyyy yyyy yyyy yyyy yyyy
+ * 	       ^
+ * 	       sign_bit_pos
+ *
+ * output (binary):
+ * 	31                                    0
+ * 	v                                     v
+ * 	XXXX XXXy yyyy yyyy yyyy yyyy yyyy yyyy
+ * 	       ^
+ * 	       sign_bit_pos
+ */
 constexpr inline uint32_t sign_ext(int sign_bit_pos, uint32_t orig)
 {
 	return static_cast<uint32_t>(
 			(static_cast<int32_t>(orig) << (31 - sign_bit_pos))
 			>> (31 - sign_bit_pos));
 }
+
+/* function: sign_ext_bit
+ * input: pos, orig
+ *	orig (binary):
+ * 	31                                    0
+ * 	v                                     v
+ * 	Xyyy yyyy yyyy yyyy yyyy yyyy yyyy yyyy
+ *
+ * output (binary):
+ * 	31                                    0
+ * 	v                                     v
+ * 	XXXX XXXX XXX0 0000 0000 0000 0000 0000
+ * 	            ^
+ * 	            pos
+ */
 constexpr inline uint32_t sign_ext_bit(int pos, uint32_t orig)
 {
 	return static_cast<uint32_t>(
 			static_cast<int32_t>(orig & 0x80000000) >> (31 - pos));
 }
 
+/* function: ID_bitmask
+ * input: start_pos, len
+ *	ID_result.orig (binary):
+ * 	31                                    0
+ * 	v                                     v
+ * 	xxxX XXXX XXXx xxxx xxxx xxxx xxxx xxxx
+ * 	   ^        ^
+ * 	   |        start_pos
+ * 	   (start_pos + len - 1)
+ *
+ * output (binary):
+ * 	31                                    0
+ * 	v                                     v
+ * 	0000 0000 0000 0000 0000 0000 XXXX XXXX
+ * 	                              ^
+ * 	                              (len - 1)
+ */
 #define ID_bitmask(start_pos, len)\
 	((ID_result.orig >> (start_pos)) & ((1 << (len)) - 1))
 
@@ -30,6 +85,11 @@ constexpr inline uint32_t sign_ext_bit(int pos, uint32_t orig)
 				case funct3_val:\
 					ID_result.exact_op = inst_op::op;\
 					break;
+
+inline void complain_wrong_inst_fmt()
+{
+	ID_result.opcode = inst_opcode(0);
+}
 void instruction_R()
 {
 	ID_result.format = inst_format::R;
@@ -59,11 +119,11 @@ void instruction_R()
 				funct3_case(0, SUB)
 				funct3_case(5, SRA)
 				default:
-					abort();
+					complain_wrong_inst_fmt();
 			}
 			break;
 		default:
-			abort();
+			complain_wrong_inst_fmt();
 	}
 }
 void instruction_I()
@@ -80,7 +140,7 @@ void instruction_I()
 			if (ID_result.funct3 == 0)
 				ID_result.exact_op = inst_op::JALR;
 			else
-				abort();
+				complain_wrong_inst_fmt();
 			break;
 		case inst_opcode::LOAD:
 			switch (ID_result.funct3)
@@ -91,7 +151,7 @@ void instruction_I()
 				funct3_case(4, LBU)
 				funct3_case(5, LHU)
 				default:
-					abort();
+					complain_wrong_inst_fmt();
 			}
 			break;
 		default: // case inst_opcode::OP_IMM:
@@ -105,8 +165,9 @@ void instruction_I()
 				funct3_case(7, ANDI)
 				case 1:
 					if (ID_result.imm >> 5 != 0)
-						abort();
-					ID_result.exact_op = inst_op::SLLI;
+						complain_wrong_inst_fmt();
+					else
+						ID_result.exact_op = inst_op::SLLI;
 					break;
 				case 5:
 					if (ID_result.imm >> 5 == 0)
@@ -114,7 +175,7 @@ void instruction_I()
 					else if (ID_result.imm >> 5 == 0x20)
 						ID_result.exact_op = inst_op::SRAI;
 					else
-						abort();
+						complain_wrong_inst_fmt();
 			}
 	}
 }
@@ -132,7 +193,7 @@ void instruction_S()
 		funct3_case(1, SH)
 		funct3_case(2, SW)
 		default:
-			abort();
+			complain_wrong_inst_fmt();
 	}
 }
 void instruction_B()
@@ -156,7 +217,7 @@ void instruction_B()
 		funct3_case(6, BLTU)
 		funct3_case(7, BGEU)
 		default:
-			abort();
+			complain_wrong_inst_fmt();
 	}
 }
 void instruction_U()
@@ -191,11 +252,6 @@ void instruction_J()
 #undef funct3_case
 void ID()
 {
-	if (MEM_pause)
-	{
-		ID_stall = true;
-		return;
-	}
 	if ((jump_info_bus & jump_info::has_info) &&
 			((jump_info_bus & jump_info::mispredict) ||
 			 (jump_info_bus & jump_info::is_jump)))
@@ -206,52 +262,69 @@ void ID()
 		ID_result.pc = pc - 4;
 		return;
 	}
-	else
+	if (MEM_pause)
 	{
-		ID_result.orig = IF_result.orig;
-		ID_result.opcode = inst_opcode(ID_bitmask(0, 7));
-		switch (ID_result.opcode)
-		{
-			case inst_opcode::OP:
-				instruction_R();
-				break;
-			case inst_opcode::OP_IMM:
-			case inst_opcode::LOAD:
-			case inst_opcode::JALR:
-				instruction_I();
-				break;
-			case inst_opcode::STORE:
-				instruction_S();
-				break;
-			case inst_opcode::BRANCH:
-				instruction_B();
-				break;
-			case inst_opcode::LUI:
-			case inst_opcode::AUIPC:
-				instruction_U();
-				break;
-			case inst_opcode::JAL:
-				instruction_J();
-				break;
-			default:
-				abort();
-		}
-		ID_pause =
-			reg_has_pending_write[ID_result.rs1] ||
-			reg_has_pending_write[ID_result.rs2];
+		ID_stall = true;
+		return;
 	}
+	if (old_state.ID_pause)
+	{
+		if (reg_has_pending_write[ID_result.rs1] || reg_has_pending_write[ID_result.rs2])
+			// no need to check last_rd because last_rd = 0
+			return;
+		ID_pause = false;
+		ID_stall = false;
+	}
+	else
+		IF_ID_buff = IF_result;
+	ID_result.orig = IF_ID_buff.orig;
+	ID_result.opcode = inst_opcode(ID_bitmask(0, 7));
+	switch (ID_result.opcode)
+	{
+		case inst_opcode::OP:
+			instruction_R();
+			break;
+		case inst_opcode::OP_IMM:
+		case inst_opcode::LOAD:
+		case inst_opcode::JALR:
+			instruction_I();
+			break;
+		case inst_opcode::STORE:
+			instruction_S();
+			break;
+		case inst_opcode::BRANCH:
+			instruction_B();
+			break;
+		case inst_opcode::LUI:
+		case inst_opcode::AUIPC:
+			instruction_U();
+			break;
+		case inst_opcode::JAL:
+			instruction_J();
+			break;
+		default:
+			complain_wrong_inst_fmt();
+	}
+	ID_pause =
+		reg_has_pending_write[ID_result.rs1] ||
+		reg_has_pending_write[ID_result.rs2] ||
+		(last_rd != 0 &&
+		 ((ID_result.rs1 == last_rd) || (ID_result.rs2 == last_rd)));
 	if (!ID_pause)
 	{
 		ID_stall = false;
 		ID_result.rs1_val = reg[ID_result.rs1];
 		ID_result.rs2_val = reg[ID_result.rs2];
-		ID_result.pc = IF_result.pc;
+		ID_result.pc = IF_ID_buff.pc;
+		last_rd = ID_result.rd;
+		ID_result = ID_result;
 	}
 	else
 	{
 		ID_stall = true;
 		ID_result = ID_NOP;
-		ID_result.pc = IF_result.pc - 4;
+		ID_result.pc = IF_ID_buff.pc - 4;
+		last_rd = 0;
 	}
 }
 #undef ID_bitmask

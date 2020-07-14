@@ -6,15 +6,18 @@
 #include <sstream>
 #include <cstdint>
 #include "inst.hpp"
-extern uint32_t pc;
-extern uint32_t reg[32];
-extern bool reg_has_pending_write[32];
-extern uint8_t memory[];
-extern IF_inst IF_result;
-extern ID_inst ID_result;
-extern EX_inst EX_result;
-extern MEM_inst MEM_result;
-extern bool IF_stall, ID_stall, EX_stall, MEM_stall;
+#include "state.hpp"
+extern state old_state;
+extern uint8_t i_memory[], d_memory[];
+static uint32_t &pc = old_state.pc;
+static uint32_t *const reg = old_state.reg;
+static bool *const reg_has_pending_write = old_state.reg_has_pending_write;
+static IF_inst &IF_result = old_state.IF_result;
+static ID_inst &ID_result = old_state.ID_result;
+static EX_inst &EX_result = old_state.EX_result;
+static MEM_inst &MEM_result = old_state.MEM_result;
+static bool &IF_stall = old_state.IF_stall, &ID_stall = old_state.ID_stall,
+			&EX_stall = old_state.EX_stall, &MEM_stall = old_state.MEM_stall;
 
 struct print_hex32bit
 {
