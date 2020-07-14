@@ -15,8 +15,13 @@ static bool &IF_stall = new_state.IF_stall;
 static bool end_reached = false;
 static uint32_t IF_pc = 0;
 
+int BP_cnt_success, BP_cnt_fail;
 void update_branch_predict()
 {
+	if (jump_info_bus & jump_info::mispredict)
+		++BP_cnt_fail;
+	else
+		++BP_cnt_success;
 }
 bool branch_predict()
 {
@@ -43,9 +48,15 @@ void IF()
 		}
 	}
 	if (MEM_pause || ID_pause)
+	{
+		IF_stall = true;
 		return;
+	}
 	if (end_reached)
+	{
 		IF_result = IF_NOP;
+		IF_stall = true;
+	}
 	else
 	{
 fetch:

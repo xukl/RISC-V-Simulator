@@ -2,7 +2,7 @@
 #define INST_HPP
 #include <cstdint>
 inline constexpr uint32_t END_INST_ORIG = 0x0ff00513;
-enum jump_info { has_info = 1, take_branch = 2, mispredict = 4, is_jump = 4 };
+enum jump_info { has_info = 1, take_branch = 2, mispredict = 4, is_jump = 8 };
 struct IF_inst
 {
 	uint32_t orig;

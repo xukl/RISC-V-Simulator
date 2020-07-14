@@ -145,6 +145,4 @@ void EX()
 			EX_pause = false;
 			jump_info_bus = jump_info(0);
 	}
-	if (EX_pause)
-		EX_stall = true;
 }
