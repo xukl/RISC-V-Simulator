@@ -187,10 +187,10 @@ void print_pipeline()
 				std::clog << ", x" << std::setw(2) << std::hex << uint32_t(EX_result.reg) << " = " << EX_result.val;
 				break;
 			case inst_opcode::BRANCH:
-				if (pc == ID_result.pc + 4)
+				if (pc == old_state.ID_result.pc + 4)
 					std::clog << ", branch not taken";
 				else
-					std::clog << ", branch taken (" << std::hex << ID_result.pc << " -> " << pc << ")";
+					std::clog << ", branch taken (" << std::hex << old_state.ID_result.pc << " -> " << pc << ")";
 				break;
 			case inst_opcode::LOAD:
 			case inst_opcode::STORE:
