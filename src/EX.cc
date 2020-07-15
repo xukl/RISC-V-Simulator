@@ -9,11 +9,43 @@ static const ID_inst &ID_result = old_state.ID_result;
 static const bool &MEM_pause = old_state.MEM_pause;
 
 static uint32_t &pc = new_state.pc;
-static jump_info &jump_info_bus = new_state.jump_info_bus;
+static bool &mispredict = new_state.mispredict;
 static EX_inst &EX_result = new_state.EX_result;
 static bool &EX_stall = new_state.EX_stall;
 static bool &EX_pause = new_state.EX_pause;
 static bool *const reg_has_pending_write = new_state.reg_has_pending_write;
+extern const int BIT_SIZE;
+extern btb_entry btb[];
+
+extern int BP_cnt_fail, BP_cnt_success;
+void update_btb(uint32_t inst_pc, uint32_t branch_target, bool take, bool mispredict)
+{
+	if (mispredict)
+		++BP_cnt_fail;
+	else
+		++BP_cnt_success;
+	btb_entry &entry = btb[(inst_pc / 4) & (BIT_SIZE - 1)];
+	if (entry.pc != inst_pc)
+	{
+		entry.pc = inst_pc;
+		entry.target = branch_target;
+		if (take)
+			entry.predict_state = 3;
+		else
+			entry.predict_state = 0;
+		return;
+	}
+	if (take)
+	{
+		if (entry.predict_state != 3)
+			++entry.predict_state;
+	}
+	else
+	{
+		if (entry.predict_state != 0)
+			--entry.predict_state;
+	}
+}
 void EX()
 {
 	if (old_state.EX_pause)
@@ -22,7 +54,7 @@ void EX()
 		EX_stall = false;
 		if (!MEM_pause)
 			EX_result = EX_NOP;
-		jump_info_bus = jump_info(0);
+		mispredict = false;
 		return;
 	}
 	if (MEM_pause)
@@ -103,35 +135,40 @@ void EX()
 	}
 	switch (ID_result.exact_op)
 	{
-#define jump_case(op_type, new_pc)\
-		case inst_op::op_type:\
-			pc = (new_pc);\
-			EX_result.val = ID_pc + 4;\
-			EX_pause = true;\
-			jump_info_bus = jump_info(jump_info::has_info | jump_info::is_jump);\
+		case inst_op::JAL:
+			pc = ID_pc + imm;
+			EX_result.val = ID_pc + 4;
+			if (!ID_result.jumped)
+				EX_pause = true;
+			mispredict = EX_pause;
+			update_btb(ID_pc, ID_pc + imm, true, mispredict);
 			break;
-		jump_case(JAL, ID_pc + imm)
-		jump_case(JALR, (rs1 + imm) & ~uint32_t(1))
-#undef jump_case
+		case inst_op::JALR:
+			pc = ((rs1 + imm) & -1);
+			EX_result.val = ID_pc + 4;
+			EX_pause = true;
+			mispredict = true;
+			break;
 #define branch_case(op_type, expr)\
 		case inst_op::op_type:\
 			if (expr)\
 			{\
-				if (!(ID_result.j_info & jump_info::take_branch))\
-					EX_pause = true;\
-				else\
+				if (ID_result.jumped)\
 					EX_pause = false;\
+				else\
+					EX_pause = true;\
 				pc = ID_pc + imm;\
 			}\
 			else\
 			{\
-				if (ID_result.j_info & jump_info::take_branch)\
+				if (ID_result.jumped)\
 					EX_pause = true;\
 				else\
 					EX_pause = false;\
 				pc = ID_pc + 4;\
 			}\
-			jump_info_bus = jump_info(jump_info::has_info | ID_result.j_info | (EX_pause ? jump_info::mispredict : 0));\
+			mispredict = EX_pause;\
+			update_btb(ID_pc, ID_pc + imm, expr, mispredict);\
 			break;
 		branch_case(BEQ, rs1 == rs2)
 		branch_case(BNE, rs1 != rs2)
@@ -143,6 +180,6 @@ void EX()
 		default:
 			pc = ID_pc + 4;
 			EX_pause = false;
-			jump_info_bus = jump_info(0);
+			mispredict = false;
 	}
 }

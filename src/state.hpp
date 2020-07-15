@@ -14,6 +14,15 @@ struct state
 	MEM_inst MEM_result = MEM_NOP;
 	bool IF_stall, ID_stall, EX_stall, MEM_stall;
 	bool ID_pause, EX_pause, MEM_pause;
-	jump_info jump_info_bus;
+	bool mispredict;
 };
+struct btb_entry
+{
+	uint32_t pc = uint32_t(-1); // an impossible pc
+	uint32_t target;
+	int predict_state;
+};
+inline constexpr int MAX_DATA_MEMORY = 1 << 20;
+inline constexpr int MAX_INST_MEMORY = 1 << 20;
+inline constexpr int BIT_SIZE = 1024;
 #endif

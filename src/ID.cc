@@ -7,7 +7,7 @@ extern state new_state;
 static const uint32_t &pc = old_state.pc;
 static const uint32_t *const reg = old_state.reg;
 static const bool *const reg_has_pending_write = old_state.reg_has_pending_write;
-static const jump_info &jump_info_bus = old_state.jump_info_bus;
+static const bool &mispredict = old_state.mispredict;
 static const IF_inst &IF_result = old_state.IF_result;
 static const bool &MEM_pause = old_state.MEM_pause;
 
@@ -252,9 +252,7 @@ void instruction_J()
 #undef funct3_case
 void ID()
 {
-	if ((jump_info_bus & jump_info::has_info) &&
-			((jump_info_bus & jump_info::mispredict) ||
-			 (jump_info_bus & jump_info::is_jump)))
+	if (mispredict)
 	{
 		ID_stall = true;
 		ID_pause = false;
@@ -316,8 +314,8 @@ void ID()
 		ID_result.rs1_val = reg[ID_result.rs1];
 		ID_result.rs2_val = reg[ID_result.rs2];
 		ID_result.pc = IF_ID_buff.pc;
+		ID_result.jumped = IF_ID_buff.jumped;
 		last_rd = ID_result.rd;
-		ID_result = ID_result;
 	}
 	else
 	{

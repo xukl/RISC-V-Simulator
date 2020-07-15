@@ -25,11 +25,11 @@ int main(int argc, char **argv)
 #endif
 	while (true)
 	{
-		WB();
-		MEM();
-		EX();
-		ID();
 		IF();
+		ID();
+		EX();
+		MEM();
+		WB();
 		old_state = new_state;
 #ifdef DEBUG
 		print_reg();

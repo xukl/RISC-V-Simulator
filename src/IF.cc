@@ -6,8 +6,10 @@ extern const state old_state;
 extern state new_state;
 
 static const uint32_t &pc = old_state.pc;
-static const jump_info &jump_info_bus = old_state.jump_info_bus;
+static const bool &mispredict = old_state.mispredict;
 static const bool &ID_pause = old_state.ID_pause, &MEM_pause = old_state.MEM_pause;
+extern const int BIT_SIZE;
+extern const btb_entry btb[];
 
 static IF_inst &IF_result = new_state.IF_result;
 static bool &IF_stall = new_state.IF_stall;
@@ -15,37 +17,21 @@ static bool &IF_stall = new_state.IF_stall;
 static bool end_reached = false;
 static uint32_t IF_pc = 0;
 
-int BP_cnt_success, BP_cnt_fail;
-void update_branch_predict()
+uint32_t branch_target_predict()
 {
-	if (jump_info_bus & jump_info::mispredict)
-		++BP_cnt_fail;
-	else
-		++BP_cnt_success;
-}
-bool branch_predict()
-{
-	return false;
-}
-constexpr inline uint32_t sign_ext_bit(int pos, uint32_t orig)
-{
-	return static_cast<uint32_t>(
-			static_cast<int32_t>(orig & 0x80000000) >> (31 - pos));
+	btb_entry entry = btb[(IF_pc / 4) & (BIT_SIZE - 1)];
+	if (entry.pc != IF_pc || entry.predict_state < 2)
+		return IF_pc + 4;
+	return entry.target;
 }
 
 void IF()
 {
-	if (jump_info_bus & jump_info::has_info)
+	if (mispredict)
 	{
-		if (!(jump_info_bus & jump_info::is_jump))
-			update_branch_predict();
-		if ((jump_info_bus & jump_info::mispredict) ||
-				(jump_info_bus & jump_info::is_jump))
-		{
-			IF_pc = pc;
-			end_reached = false;
-			goto fetch;
-		}
+		IF_pc = pc;
+		end_reached = false;
+		goto fetch;
 	}
 	if (MEM_pause || ID_pause)
 	{
@@ -62,38 +48,11 @@ void IF()
 fetch:
 		IF_stall = false;
 		uint32_t raw_inst = *reinterpret_cast<const uint32_t*>(i_memory + IF_pc);
-		IF_result = {raw_inst, IF_pc, jump_info(0)};
-		if (inst_opcode(raw_inst & ((1 << 7) - 1)) == inst_opcode::BRANCH)
-		{
-			bool take_b = branch_predict();
-			if (take_b)
-			{
-#define raw_bitmask(start_pos, len)\
-	((raw_inst >> (start_pos)) & ((1 << (len)) - 1))
-				uint32_t imm = 
-					(raw_bitmask(7, 1) << 11) |
-					(raw_bitmask(8, 4) << 1) |
-					(raw_bitmask(25, 6) << 5) |
-					sign_ext_bit(12, raw_inst);
-#undef raw_bitmask
-				IF_pc += imm;
-				IF_result.j_info = jump_info(jump_info::has_info | jump_info::take_branch);
-			}
-			else
-			{
-				IF_pc += 4;
-				IF_result.j_info = jump_info::has_info;
-			}
-			IF_result.j_info = jump_info::has_info;
-		}
-/*		else if (inst_opcode(raw_inst & ((1 << 7) - 1)) == inst_opcode::JALR)
-		{
-		}
-		else if (inst_opcode(raw_inst & ((1 << 7) - 1)) == inst_opcode::JAL)
-		{
-		}*/
-		else
-			IF_pc += 4;
+		IF_result = {raw_inst, IF_pc, false};
+		uint32_t predict_pc = branch_target_predict();
+		if (predict_pc != IF_pc + 4)
+			IF_result.jumped = true;
+		IF_pc = predict_pc;
 		if (IF_result.orig == END_INST_ORIG)
 			end_reached = true;
 	}
