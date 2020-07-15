@@ -19,7 +19,7 @@ static uint32_t IF_pc = 0;
 
 uint32_t branch_target_predict()
 {
-	btb_entry entry = btb[(IF_pc / 4) & (BIT_SIZE - 1)];
+	btb_entry entry = btb[(IF_pc / 4) % BIT_SIZE];
 	if (entry.pc != IF_pc || entry.predict_state < 2)
 		return IF_pc + 4;
 	return entry.target;

@@ -30,10 +30,10 @@ int main(int argc, char **argv)
 		EX();
 		MEM();
 		WB();
-		old_state = new_state;
 #ifdef DEBUG
 		print_reg();
 		print_pipeline();
 #endif
+		old_state = new_state;
 	}
 }

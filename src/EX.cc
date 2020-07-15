@@ -24,7 +24,7 @@ void update_btb(uint32_t inst_pc, uint32_t branch_target, bool take, bool mispre
 		++BP_cnt_fail;
 	else
 		++BP_cnt_success;
-	btb_entry &entry = btb[(inst_pc / 4) & (BIT_SIZE - 1)];
+	btb_entry &entry = btb[(inst_pc / 4) % BIT_SIZE];
 	if (entry.pc != inst_pc)
 	{
 		entry.pc = inst_pc;
@@ -51,7 +51,7 @@ void EX()
 	if (old_state.EX_pause)
 	{
 		EX_pause = false;
-		EX_stall = false;
+		EX_stall = MEM_pause;
 		if (!MEM_pause)
 			EX_result = EX_NOP;
 		mispredict = false;
@@ -144,7 +144,7 @@ void EX()
 			update_btb(ID_pc, ID_pc + imm, true, mispredict);
 			break;
 		case inst_op::JALR:
-			pc = ((rs1 + imm) & -1);
+			pc = ((rs1 + imm) & ~uint32_t(1));
 			EX_result.val = ID_pc + 4;
 			EX_pause = true;
 			mispredict = true;
