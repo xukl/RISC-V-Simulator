@@ -7,7 +7,7 @@ static const MEM_inst &MEM_result = old_state.MEM_result;
 void end_of_simulation();
 
 static uint32_t *const reg = new_state.reg;
-static bool *const reg_has_pending_write = new_state.reg_has_pending_write;
+static unsigned *const reg_has_pending_write = new_state.reg_has_pending_write;
 void WB()
 {
 	if (MEM_result.finish_flag)
@@ -24,7 +24,8 @@ void WB()
 		case inst_opcode::LOAD:
 		case inst_opcode::AUIPC:
 			reg[rd] = val;
-			reg_has_pending_write[rd] = false;
+			if (rd != 0)
+				--reg_has_pending_write[rd];
 			break;
 		case inst_opcode::BRANCH:
 		case inst_opcode::STORE:

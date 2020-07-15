@@ -13,7 +13,7 @@ static bool &mispredict = new_state.mispredict;
 static EX_inst &EX_result = new_state.EX_result;
 static bool &EX_stall = new_state.EX_stall;
 static bool &EX_pause = new_state.EX_pause;
-static bool *const reg_has_pending_write = new_state.reg_has_pending_write;
+static unsigned *const reg_has_pending_write = new_state.reg_has_pending_write;
 extern const int BIT_SIZE;
 extern btb_entry btb[];
 
@@ -73,8 +73,8 @@ void EX()
 		case inst_format::U:
 		case inst_format::J:
 			EX_result.reg = ID_result.rd;
-			reg_has_pending_write[ID_result.rd] = true;
-			reg_has_pending_write[0] = false;
+			if (ID_result.rd != 0)
+				++reg_has_pending_write[ID_result.rd];
 			break;
 		case inst_format::S:
 			EX_result.reg = ID_result.rs2;

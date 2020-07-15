@@ -11,7 +11,7 @@ extern state old_state, new_state;
 extern uint8_t i_memory[], d_memory[];
 static uint32_t &pc = new_state.pc;
 static uint32_t *const reg = new_state.reg;
-static bool *const reg_has_pending_write = new_state.reg_has_pending_write;
+static unsigned *const reg_has_pending_write = new_state.reg_has_pending_write;
 static IF_inst &IF_result = new_state.IF_result;
 static ID_inst &ID_result = new_state.ID_result;
 static EX_inst &EX_result = new_state.EX_result;

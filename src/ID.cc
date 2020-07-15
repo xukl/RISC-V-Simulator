@@ -6,7 +6,7 @@ extern state new_state;
 
 static const uint32_t &pc = old_state.pc;
 static const uint32_t *const reg = old_state.reg;
-static const bool *const reg_has_pending_write = old_state.reg_has_pending_write;
+static const unsigned *const reg_has_pending_write = old_state.reg_has_pending_write;
 static const bool &mispredict = old_state.mispredict;
 static const IF_inst &IF_result = old_state.IF_result;
 static const bool &MEM_pause = old_state.MEM_pause;

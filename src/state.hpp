@@ -6,7 +6,7 @@ struct state
 {
 	uint32_t pc = 0;
 	uint32_t reg[32];
-	bool reg_has_pending_write[32];
+	unsigned reg_has_pending_write[32];
 
 	IF_inst IF_result = IF_NOP;
 	ID_inst ID_result = ID_NOP;
