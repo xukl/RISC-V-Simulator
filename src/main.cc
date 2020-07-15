@@ -3,8 +3,6 @@
 //#define DEBUG
 #ifdef DEBUG
 #include "debug.hpp"
-#include <fstream>
-#include <cassert>
 #endif
 extern void IF();
 extern void ID();
@@ -13,16 +11,10 @@ extern void MEM();
 extern void WB();
 extern void read_inst(std::istream &);
 extern state old_state, new_state;
-int main(int argc, char **argv)
+int main()
 {
 	std::ios::sync_with_stdio(false);
-#ifdef DEBUG
-	assert(argc > 1);
-	std::ifstream fin(argv[1]);
-	read_inst(fin);
-#else
 	read_inst(std::cin);
-#endif
 	while (true)
 	{
 		IF();
