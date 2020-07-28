@@ -114,6 +114,18 @@ void EX()
 		val_case(SRAI, int32_t(rs1) >> (imm & 0x1f))
 		val_case(LUI, imm)
 		val_case(AUIPC, ID_pc + imm)
+		val_case(MUL, rs1 * rs2)
+		val_case(MULH, uint64_t(int64_t(int32_t(rs1)) * int64_t(int32_t(rs2))) >> 32)
+		val_case(MULHSU, uint64_t(int64_t(int32_t(rs1)) * uint64_t(uint32_t(rs2))) >> 32)
+		val_case(MULHU, uint64_t(uint64_t(uint32_t(rs1)) * uint64_t(uint32_t(rs2))) >> 32)
+		val_case(DIV, (rs2 == 0 ? -1 :
+					(rs1 == 0x80000000 && int32_t(rs2) == -1 ? 0x80000000 :
+					 int32_t(rs1) / int32_t(rs2))))
+		val_case(DIVU, (rs2 == 0 ? uint32_t(-1) : uint32_t(rs1) / uint32_t(rs2)))
+		val_case(REM, (rs2 == 0 ? rs1 :
+					(rs1 == 0x80000000 && int32_t(rs2) == -1 ? 0 :
+					 int32_t(rs1) % int32_t(rs2))))
+		val_case(REMU, (rs2 == 0 ? rs1 : uint32_t(rs1) % uint32_t(rs2)))
 #undef val_case
 #define SL_case(op_type, info)\
 		case inst_op::op_type:\

@@ -113,6 +113,19 @@ void instruction_R()
 				funct3_case(7, AND)
 			}
 			break;
+		case 1:
+			switch (ID_result.funct3)
+			{
+				funct3_case(0, MUL)
+				funct3_case(1, MULH)
+				funct3_case(2, MULHSU)
+				funct3_case(3, MULHU)
+				funct3_case(4, DIV)
+				funct3_case(5, DIVU)
+				funct3_case(6, REM)
+				funct3_case(7, REMU)
+			}
+			break;
 		case 0x20:
 			switch (ID_result.funct3)
 			{
