@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <cstdlib>
+#include <iostream>
 #include "inst.hpp"
 #include "state.hpp"
 extern const state old_state;
@@ -18,6 +19,7 @@ extern const int BIT_SIZE;
 extern btb_entry btb[];
 
 extern int BP_cnt_fail, BP_cnt_success;
+void end_of_simulation(int exit_val);
 void update_btb(uint32_t inst_pc, uint32_t branch_target, bool take, bool mispredict)
 {
 	if (mispredict)
@@ -82,7 +84,7 @@ void EX()
 		case inst_format::B:
 			;
 	}
-	EX_result.finish_flag = (ID_result.orig == 0x0ff00513);
+	EX_result.finish_flag = (ID_result.orig == END_INST_ORIG);
 	uint32_t rs1 = ID_result.rs1_val;
 	uint32_t rs2 = ID_result.rs2_val;
 	uint32_t imm = ID_result.imm;
@@ -142,6 +144,37 @@ void EX()
 		SL_case(SH, -2)
 		SL_case(SW, -4)
 #undef SL_case
+		case inst_op::ECALL:
+		case inst_op::EBREAK:
+			switch (rs1)
+			{
+				case 0:
+					end_of_simulation(rs2);
+					break;
+				case 1:
+					{
+						int32_t val;
+						std::cin >> val;
+						EX_result.val = val;
+					}
+					break;
+				case 2:
+					std::cout << int32_t(rs2) << std::endl;
+					EX_result.val = rs1;
+					break;
+				case 3:
+					{
+						unsigned char val = std::cin.get();
+						EX_result.val = val;
+					}
+					break;
+				case 4:
+					std::cout << (unsigned char)(rs2) << std::endl;
+					EX_result.val = rs1;
+					break;
+				default:
+					abort();
+			}
 		default:
 			;
 	}
@@ -194,4 +227,6 @@ void EX()
 			EX_pause = false;
 			mispredict = false;
 	}
+	if (EX_result.finish_flag)
+		EX_result.val = rs1;
 }

@@ -37,7 +37,7 @@ void print_inst_op(inst_op exact_op)
 		case inst_op::op:\
 			std::clog << #op;\
 			break;
-op_case(ADD)op_case(SLT)op_case(SLTU)op_case(AND)op_case(OR)op_case(XOR)op_case(SLL)op_case(SRL)op_case(SUB)op_case(SRA)op_case(ADDI)op_case(SLTI)op_case(SLTIU)op_case(ANDI)op_case(ORI)op_case(XORI)op_case(SLLI)op_case(SRLI)op_case(SRAI)op_case(LB)op_case(LH)op_case(LW)op_case(LBU)op_case(LHU)op_case(SB)op_case(SH)op_case(SW)op_case(BEQ)op_case(BNE)op_case(BLT)op_case(BLTU)op_case(BGE)op_case(BGEU)op_case(LUI)op_case(AUIPC)op_case(JAL)op_case(JALR)
+op_case(ADD)op_case(SLT)op_case(SLTU)op_case(AND)op_case(OR)op_case(XOR)op_case(SLL)op_case(SRL)op_case(SUB)op_case(SRA)op_case(MUL)op_case(MULH)op_case(MULHSU)op_case(MULHU)op_case(DIV)op_case(DIVU)op_case(REM)op_case(REMU)op_case(ADDI)op_case(SLTI)op_case(SLTIU)op_case(ANDI)op_case(ORI)op_case(XORI)op_case(SLLI)op_case(SRLI)op_case(SRAI)op_case(LB)op_case(LH)op_case(LW)op_case(LBU)op_case(LHU)op_case(SB)op_case(SH)op_case(SW)op_case(BEQ)op_case(BNE)op_case(BLT)op_case(BLTU)op_case(BGE)op_case(BGEU)op_case(LUI)op_case(AUIPC)op_case(JAL)op_case(JALR)op_case(FENCE)op_case(ECALL)op_case(EBREAK)
 #undef op_case
 	}
 }
@@ -49,7 +49,7 @@ void print_inst_opcode(inst_opcode opcode)
 		case inst_opcode::op:\
 			std::clog << #op;\
 			break;
-opcode_case(OP_IMM)opcode_case(LOAD)opcode_case(LUI)opcode_case(AUIPC)opcode_case(OP)opcode_case(JAL)opcode_case(JALR)opcode_case(BRANCH)opcode_case(STORE)
+opcode_case(OP_IMM)opcode_case(LOAD)opcode_case(LUI)opcode_case(AUIPC)opcode_case(OP)opcode_case(JAL)opcode_case(JALR)opcode_case(BRANCH)opcode_case(STORE)opcode_case(SYSTEM)opcode_case(MISC_MEM)
 #undef op_case
 	}
 }
@@ -196,6 +196,11 @@ void print_pipeline()
 			case inst_opcode::STORE:
 				std::clog << ", access d_memory[" << print_hex32bit(EX_result.addr) << "]";
 				break;
+			case inst_opcode::MISC_MEM:
+				std::clog << ", FENCE ignored";
+				break;
+			case inst_opcode::SYSTEM:
+				std::clog << ", syscall, a0=" << reg[10] << ", a1=" << reg[11];
 		}
 	}
 	std::clog << std::endl;

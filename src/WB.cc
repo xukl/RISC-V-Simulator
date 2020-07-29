@@ -4,14 +4,14 @@
 extern const state old_state;
 extern state new_state;
 static const MEM_inst &MEM_result = old_state.MEM_result;
-void end_of_simulation();
+void end_of_simulation(int exit_val);
 
 static uint32_t *const reg = new_state.reg;
 static unsigned *const reg_has_pending_write = new_state.reg_has_pending_write;
 void WB()
 {
 	if (MEM_result.finish_flag)
-		end_of_simulation();
+		end_of_simulation(MEM_result.val);
 	uint32_t val = MEM_result.val;
 	uint_fast8_t rd = MEM_result.reg;
 	switch (MEM_result.opcode)
@@ -23,12 +23,14 @@ void WB()
 		case inst_opcode::LUI:
 		case inst_opcode::LOAD:
 		case inst_opcode::AUIPC:
+		case inst_opcode::SYSTEM:
 			reg[rd] = val;
 			if (rd != 0)
 				--reg_has_pending_write[rd];
 			break;
 		case inst_opcode::BRANCH:
 		case inst_opcode::STORE:
+		case inst_opcode::MISC_MEM:
 			;
 	}
 	reg[0] = 0;

@@ -167,6 +167,33 @@ void instruction_I()
 					complain_wrong_inst_fmt();
 			}
 			break;
+		case inst_opcode::MISC_MEM:
+			if (ID_result.funct3 != 0)
+				complain_wrong_inst_fmt();
+			else
+				ID_result = ID_NOP;
+			break;
+		case inst_opcode::SYSTEM:
+			if (ID_result.rs1 != 0 || ID_result.rd != 0 || ID_result.funct3 != 0)
+				complain_wrong_inst_fmt();
+			else
+			{
+				switch (ID_result.imm)
+				{
+					case 0:
+						ID_result.exact_op = inst_op::ECALL;
+						break;
+					case 1:
+						ID_result.exact_op = inst_op::EBREAK;
+						break;
+					default:
+						complain_wrong_inst_fmt();
+				}
+			}
+			ID_result.rs1 = 10;
+			ID_result.rs2 = 11;
+			ID_result.rd = 10;
+			break;
 		default: // case inst_opcode::OP_IMM:
 			switch (ID_result.funct3)
 			{
@@ -298,6 +325,8 @@ void ID()
 		case inst_opcode::OP_IMM:
 		case inst_opcode::LOAD:
 		case inst_opcode::JALR:
+		case inst_opcode::SYSTEM:
+		case inst_opcode::MISC_MEM:
 			instruction_I();
 			break;
 		case inst_opcode::STORE:
@@ -337,5 +366,7 @@ void ID()
 		ID_result.pc = IF_ID_buff.pc - 4;
 		last_rd = 0;
 	}
+	if (ID_result.orig == END_INST_ORIG)
+		ID_result.rs1_val = reg[10];
 }
 #undef ID_bitmask
